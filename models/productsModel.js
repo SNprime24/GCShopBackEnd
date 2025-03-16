@@ -3,11 +3,6 @@ import mongoose, { Types } from 'mongoose';
 import validator from 'validator';
 
 const ProductSchema = new mongoose.Schema({
-    seller: { 
-        type: mongoose.Schema.Types.ObjectId, 
-        ref: "Seller", 
-        required: true 
-    },
     name: { 
         type: String, 
         required: true 

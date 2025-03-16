@@ -107,7 +107,7 @@ const verifyAnswer = tryCatch(async (req, res, next) => {
 	return res.status(200).json({ success: true, message: "Answer verified successfully." });
 });
 
-async function createCustomer(name, email, password, secretQuestion, secretAnswer) {
+async function createCustomer(name, email, password) {
 	const index = email.indexOf("@");
 	const rollNumber = email.slice(0, index);
 	const rollNumberCheck = rollNumber.slice(5) * 1;
@@ -116,12 +116,10 @@ async function createCustomer(name, email, password, secretQuestion, secretAnswe
 		name,
 		email,
 		password,
-		rollNumber,
-		secretQuestion,
-		secretAnswer
+		rollNumber
 	});
 	return Customer;
-}
+};
 
 const newCustomer = tryCatch(async (req, res, next) => {
 	const { name, email, password } = req.body;
@@ -136,15 +134,19 @@ const newCustomer = tryCatch(async (req, res, next) => {
 			Customer = await createCustomer(name, email, password);
 		} 
 		else {
-			const teacher = await Seller.create({
-				name,
+			const seller = await Seller.create({
+				storeName,
+				ownerName,
 				email,
-				password
+				password,
+				address,
+				contactNumber,
+				operatingHours
 			});
-			Customer = teacher;
+			Customer = seller;
 			console.log(Customer);
 		}
-		sendToken(res, Customer, 200, `Welcome to Code Forge`);
+		sendToken(res, Customer, 200, `Welcome to GCSHOP`);
 	} 
 	catch (error) {
 		console.error("Error creating Customer:", error);
