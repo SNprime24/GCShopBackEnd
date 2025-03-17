@@ -40,6 +40,9 @@ const CustomerSchema = new mongoose.Schema({
             ref: "Order" 
         }
     ],
+    cart :[{
+        type : Object
+    }],
     role: {
         type: String,
         enum: ['admin', 'seller', 'customer'],

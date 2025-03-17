@@ -31,7 +31,7 @@ const createProduct = tryCatch(async(req, res, next)=>{
     // create new product
     const newProduct = await Products.create(reqData);
     seller.products.push(newProduct._id);
-    await teacher.save();
+    await seller.save();
 
     return res.status(200).json({ success: true, data: newProduct });
 });

@@ -294,6 +294,18 @@ const updateUserName = tryCatch(async (req, res) => {
 	return res.status(200).json({ success: true });
 });
 
+const addToCart = tryCatch(async(req,res)=>{
+	const Customer = await Customer.findById(req.customer);
+	if(!Customer) return next(new ErrorHandler("Customer not found",404));
+	const { productID, quantity } = req.body;
+    if (!productID || !quantity) return next(new ErrorHandler("Product ID and quantity are required", 400));
+
+    Customer.cart.push({ productID, quantity });
+    await Customer.save();
+
+    return res.status(200).json({ success: true, cart: Customer.cart });
+});
+
 export {
 	newCustomer,
 	login,
@@ -308,5 +320,6 @@ export {
 	uploadCustomerPhoto,
 	resizeCustomerPhoto,
 	updateUserName,
-	verifyAnswer
+	verifyAnswer,
+	addToCart
 };
