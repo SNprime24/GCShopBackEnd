@@ -5,6 +5,8 @@ import dotenv from 'dotenv';
 import { connectDB } from './utils/features.js';
 import cookieParser from 'cookie-parser';
 import customerRoute from './routers/customerRouter.js';
+import productsRoute from './routers/productsRouter.js';
+import orderRoute from './routers/orderRouter.js';
 import { errorMiddleware } from './middlewares/error.js';
 
 const corsOptions = {
