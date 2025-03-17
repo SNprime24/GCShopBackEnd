@@ -4,18 +4,18 @@ import validator from 'validator';
 
 const OrderSchema = new mongoose.Schema({
     customer: { 
-        type: mongoose.Schema.Types.ObjectId, 
+        type: Types.ObjectId, 
         ref: "Student", 
         required: true 
     },
     seller: { 
-        type: mongoose.Schema.Types.ObjectId, 
+        type: Types.ObjectId, 
         ref: "Seller", 
         required: true 
     },
     products: [
         {
-            product: { type: mongoose.Schema.Types.ObjectId, ref: "Product" },
+            product: { type: Types.ObjectId, ref: "Product" },
             quantity: { type: Number, required: true }
         }
     ],
@@ -39,5 +39,5 @@ const OrderSchema = new mongoose.Schema({
     }
 });
 
-const Order = mongoose.model('Seller', OrderSchema);
+const Order = mongoose.model('Order', OrderSchema);
 export default Order;
