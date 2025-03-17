@@ -30,6 +30,9 @@ app.use(cookieParser());
 app.use(cors(corsOptions));
 
 app.use('/api/v1/customer', customerRoute);
+app.use('/api/v1/order', orderRoute);
+app.use('/api/v1/products', productsRoute);
+app.use('/api/v1/seller', sellerRoute);
 
 app.get('/', (req, res) => {
     res.send("This is IIT BBS");
