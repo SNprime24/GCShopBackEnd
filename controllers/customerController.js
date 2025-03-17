@@ -9,7 +9,7 @@ import { ErrorHandler, sendEmail } from "../utils/utility.js";
 
 dotenv.config();
 const emailTokens = {};
-let CustomerRole;
+let customerRole;
 const multerStorage = multer.memoryStorage();
 
 const multerFilter = (req, file, cb) => {
@@ -112,47 +112,88 @@ async function createCustomer(name, email, password) {
 	const rollNumber = email.slice(0, index);
 	const rollNumberCheck = rollNumber.slice(5) * 1;
 
-	const Customer = await Customer.create({
+	const customer = await Customer.create({
 		name,
 		email,
 		password,
 		rollNumber
 	});
-	return Customer;
+	return customer;
 };
 
 const newCustomer = tryCatch(async (req, res, next) => {
-	const { name, email, password } = req.body;
+    const { name, email, password, storeName, ownerName, address, contactNumber, operatingHours } = req.body;
 
-	if (!name || !email || !password ) {
-		return next(new ErrorHandler("Please fill all fields", 404));
-	}
+    if (!name || !email || !password) {
+        return next(new ErrorHandler("Please fill all fields", 400));
+    }
 
-	try {
-		let Customer;
-		if (email[0] === "2") {
-			Customer = await createCustomer(name, email, password);
-		} 
-		else {
-			const seller = await Seller.create({
-				storeName,
-				ownerName,
-				email,
-				password,
-				address,
-				contactNumber,
-				operatingHours
-			});
-			Customer = seller;
-			console.log(Customer);
-		}
-		sendToken(res, Customer, 200, `Welcome to GCSHOP`);
-	} 
-	catch (error) {
-		console.error("Error creating Customer:", error);
-		return next(new ErrorHandler("An error occurred while creating the Customer", 500));
-	}
+    try {
+        let customer;  // Declare Customer before using it
+
+        if (email[0] === "2") {
+            // If email starts with '2', create a regular customer
+            customer = await createCustomer(name, email, password);
+        } else {
+            // Ensure seller fields are provided
+            if (!storeName || !ownerName || !address || !contactNumber || !operatingHours) {
+                return next(new ErrorHandler("Missing seller information", 400));
+            }
+
+            // Create a seller
+            customer = await Seller.create({
+                storeName,
+                ownerName,
+                email,
+                password,
+                address,
+                contactNumber,
+                operatingHours
+            });
+        }
+
+        console.log("Customer Created:", customer);
+        sendToken(res, customer, 200, `Welcome to GCSHOP`);
+    } 
+    catch (error) {
+        console.error("Error creating Customer:", error);
+        return next(new ErrorHandler("An error occurred while creating the Customer", 500));
+    }
 });
+
+// const newCustomer = tryCatch(async (req, res, next) => {
+// 	const { name, email, password } = req.body;
+// 	console.log("Hello");
+
+// 	if (!name || !email || !password ) {
+// 		return next(new ErrorHandler("Please fill all fields", 404));
+// 	}
+
+// 	try {
+// 		let Customer;
+// 		if (email[0] === "2") {
+// 			Customer = await createCustomer(name, email, password);
+// 		} 
+// 		else {
+// 			const seller = await Seller.create({
+// 				storeName,
+// 				ownerName,
+// 				email,
+// 				password,
+// 				address,
+// 				contactNumber,
+// 				operatingHours
+// 			});
+// 			Customer = seller;
+// 			console.log(Customer);
+// 		}
+// 		sendToken(res, Customer, 200, `Welcome to GCSHOP`);
+// 	} 
+// 	catch (error) {
+// 		console.error("Error creating Customer:", error);
+// 		return next(new ErrorHandler("An error occurred while creating the Customer", 500));
+// 	}
+// });
 
 const login = tryCatch(async (req, res, next) => {
 	const { email, password, toRemember } = req.body;
@@ -160,25 +201,25 @@ const login = tryCatch(async (req, res, next) => {
 		return next(new ErrorHandler("Please fill all the fields", 404));
 	}
 
-	let Customer;
-	if (email[0] === "2") Customer = await Customer.findOne({ email }).select("+password");
-	else Customer = await Teacher.findOne({ email }).select("+password");
+	let customer;
+	if (email[0] === "2") customer = await Customer.findOne({ email }).select("+password");
+	else customer = await Teacher.findOne({ email }).select("+password");
 
-	if (!Customer) return next(new ErrorHandler("Invalid credentials", 404));
-	const isMatch = await bcrypt.compare(password, Customer.password);
+	if (!customer) return next(new ErrorHandler("Invalid credentials", 404));
+	const isMatch = await bcrypt.compare(password, customer.password);
 	if (!isMatch) return next(new ErrorHandler("Invalid credentials", 401));
 
-	CustomerRole = Customer.role;
-	if(toRemember) sendToken(res, Customer, 200, `Welcome back, ${Customer.name}`);
-	return res.status(200).json({ success: true, message: `Welcome back, ${Customer.name}`, Customer: Customer });
+	customerRole = customer.role;
+	if(toRemember) sendToken(res, customer, 200, `Welcome back, ${customer.name}`);
+	return res.status(200).json({ success: true, message: `Welcome back, ${customer.name}`, customer: customer });
 });
 
 const forgetPassword = tryCatch(async (req, res, next) => {
 	const { email } = req.body;
 	if (!email) return next(new ErrorHandler("Please fill all the fields", 404));
 
-	const Customer = await Customer.findOne({ email }).select("+password");
-	if (!Customer) return next(new ErrorHandler("Customer do not exists", 404));
+	const customer = await Customer.findOne({ email }).select("+password");
+	if (!customer) return next(new ErrorHandler("Customer do not exists", 404));
 
 	sendOTP(email, "Forget Password", next);
 	return res.status(200).json({ success: true });
@@ -188,85 +229,85 @@ const setNewPassword = tryCatch(async (req, res, next) => {
 	const { email, password } = req.body;
 	if (!email || !password) return next(new ErrorHandler("Please fill all the fields", 404));
 
-	const Customer = await Customer.findOne({ email });
-	if (!Customer) return next(new ErrorHandler("Customer do not exists", 404));
-	Customer.password = password;
-	await Customer.save();
-	return res.status(200).json({ success: true, Customer: Customer, message: "Password has been updated." });
+	const customer = await Customer.findOne({ email });
+	if (!customer) return next(new ErrorHandler("Customer do not exists", 404));
+	customer.password = password;
+	await customer.save();
+	return res.status(200).json({ success: true, customer: customer, message: "Password has been updated." });
 });
 
 const getMyProfile = tryCatch(async (req, res) => {
-	let Customer;
-	if (CustomerRole === "customer") Customer = await Customer.findById(req.Customer);
-	else Customer = await Seller.findById(req.Customer);
+	let customer;
+	if (customerRole === "customer") customer = await Customer.findById(req.Customer);
+	else customer = await Seller.findById(req.customer);
 	return res.status(200).json({
 		success: true,
-		Customer,
+		customer,
 	});
 });
 
 const getOtherProfile = tryCatch(async (req, res, next) => {
-	const { CustomerName, role } = req.query; // Access query parameters
+	const { customerName, role } = req.query; // Access query parameters
 
 	// Check if CustomerName or role is missing
-	if (!CustomerName || !role) {
+	if (!customerName || !role) {
 		return next(new ErrorHandler("Incomplete query: CustomerName and role are required.", 400));
 	}
 
-	console.log(`Fetching profile for CustomerName: ${CustomerName}, role: ${role}`);
+	console.log(`Fetching profile for CustomerName: ${customerName}, role: ${role}`);
 
 	// Fetch Customer based on role
-	let Customer;
+	let customer;
 	if (role === "customer") {
-		Customer = await Customer.findOne({ CustomerName });
+		customer = await Customer.findOne({ customerName });
 	} else if (role === "seller") {
-		Customer = await Seller.findOne({ CustomerName });
+		customer = await Seller.findOne({ customerName });
 	}
 
 	// Check if Customer exists
-	if (!Customer) {
+	if (!customer) {
 		return next(new ErrorHandler("Customer not found with the given Customername.", 404));
 	}
 
 	// Send the Customer data as a response
 	res.status(200).json({
 		success: true,
-		Customer,
+		customer,
 	});
 });
 
 const getAllOtherProfile = tryCatch(async (req, res, next) => {
-	const { CustomerName, role } = req.query; // Access query parameters
+	const { customerName, role } = req.query; // Access query parameters
 
 	// Check if CustomerName or role is missing
-	if (!CustomerName || !role) {
+	if (!customerName || !role) {
 		return next(new ErrorHandler("Incomplete query: CustomerName and role are required.", 400));
 	}
 
-	console.log(`Fetching profiles starting with CustomerName: ${CustomerName}, role: ${role}`);
+	console.log(`Fetching profiles starting with CustomerName: ${customerName}, role: ${role}`);
 
 	// Define the regex for "starts with"
-	const regex = new RegExp(`^${CustomerName}`, "i"); // Case-insensitive regex
+	const regex = new RegExp(`^${customerName}`, "i"); // Case-insensitive regex
 
 	// Fetch Customers based on role
-	let Customers;
+	let customers;
 	if (role === "customer") {
-		Customers = await Customer.find({ CustomerName: regex }); // Find Customers whose Customernames start with `CustomerName`
+		customers = await Customer.find({ customerName: regex }); // Find Customers whose Customernames start with `CustomerName`
 	} else if (role === "seller") {
-		Customers = await Seller.find({ CustomerName: regex }); // Find Seller whose Customernames start with `CustomerName`
+		customers = await Seller.find({ customerName: regex }); // Find Seller whose Customernames start with `CustomerName`
 	} else {
 		return next(new ErrorHandler("Invalid role provided.", 400));
 	}
 
 	// Check if Customers exist
-	if (!Customers || Customers.length === 0) {
+	if (!customers || customers.length === 0) {
 		return next(new ErrorHandler("No Customers found with the given Customername prefix.", 404));
 	}
 
 	// Send the Customer data as a response
 	res.status(200).json({
 		success: true,
-		Customers,
+		customers,
 	});
 });
 
@@ -282,28 +323,28 @@ const logOut = tryCatch(async (req, res) => {
 
 const updateUserName = tryCatch(async (req, res) => {
 	const newUserName = req.body;
-	let Customer;
-	if (CustomerRole === "customer") Customer = await Customer.findById(req.Customer);
-	else Customer = await Seller.findById(req.Customer);
+	let customer;
+	if (customerRole === "customer") Customer = await Customer.findById(req.Customer);
+	else customer = await Seller.findById(req.customer);
 
-	if (!Customer) return next(new ErrorHandler("Customer / Seller not found", 404));
+	if (!customer) return next(new ErrorHandler("Customer / Seller not found", 404));
 
-	Customer.username = newUserName;
-	await Customer.save();
+	customer.username = newUserName;
+	await customer.save();
 
 	return res.status(200).json({ success: true });
 });
 
 const addToCart = tryCatch(async(req,res)=>{
-	const Customer = await Customer.findById(req.customer);
-	if(!Customer) return next(new ErrorHandler("Customer not found",404));
+	const customer = await Customer.findById(req.customer);
+	if(!customer) return next(new ErrorHandler("Customer not found",404));
 	const { productID, quantity } = req.body;
     if (!productID || !quantity) return next(new ErrorHandler("Product ID and quantity are required", 400));
 
-    Customer.cart.push({ productID, quantity });
-    await Customer.save();
+    customer.cart.push({ productID, quantity });
+    await customer.save();
 
-    return res.status(200).json({ success: true, cart: Customer.cart });
+    return res.status(200).json({ success: true, cart: customer.cart });
 });
 
 export {

@@ -11,7 +11,7 @@ const cookieOption = {
 // connect to the mongoDB database
 const connectDB = (uri) => {
     mongoose
-        .connect(uri, {dbname: "CodeForge"})
+        .connect(uri, {dbname: "GC"})
         .then((data) => console.log(`Connected to MongoDb: ${data.connection.host}`))
         .catch((err) => { throw err })
 };
